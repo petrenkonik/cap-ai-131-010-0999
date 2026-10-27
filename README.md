@@ -1,21 +1,35 @@
 # cap-ai-mcp-whats-new
 
-Demo project for the coordinated **@cap-js/ai 1.3.0** + **@cap-js/mcp-server 0.1.0** releases (2026-10-26). TypeScript only, zero build step — Node 24 type stripping loads `.mts` natively.
+Demo project for the CAP AI stack releases of late Oct 2026: **@cap-js/ai 1.3.0**, **@cap-js/mcp-server 0.1.0** and **@cap-js/agents 0.9.9**. TypeScript only, zero build step — Node 24 type stripping loads `.mts` natively.
 
-## What's demoed
+## The agents part (A2A + web chat, no API key)
+
+`@cap-js/agents` is a CAP plugin: annotate a service with `@agent` and it becomes an A2A-protocol agent with an auto-generated card, auto-generated tools and a bundled chat web UI.
+
+```bash
+npm run serve          # boots CAP on :4004 (downloads a ~87 MB embedding model on first boot)
+open http://localhost:4004/agents/notes/preview/     # chat UI
+curl http://localhost:4004/agents/notes/.well-known/agent-card.json
+```
+
+- `srv/notes-agent.cds` — the `@agent` service (entity + action → agent skills/tools)
+- `cap.yaml` — `requires.llm.kind: llm-mock` — the built-in mock provider, zero API keys. The mock even **auto-calls the generated `query` tool** and returns real query output.
+- A2A endpoint: `POST /agents/notes` with JSON-RPC `message/send` (A2A 0.3.0) — exercised live in `test/agents-web.test.mts`
+
+## What's demoed from the other releases
 
 | Release feature | Test |
 |---|---|
-| **Fail-fast env validation** (0.1.0): every `CDS_MCP_*` var checked by `lib/utils.js` — timeouts at import time, `CDS_MCP_MAX_RESULTS` per search call | `test/config-validation.test.mts` |
-| **Runtime-aware hybrid search** (0.1.0): `hybridSearch(..., { runtime })` drops chunks labelled with the other runtime before cosine + BM25 (FTS5) + weighted RRF; unlabelled chunks always stay; `runtime: undefined` = old behaviour | `test/runtime-filter.test.mts` |
-| **`installModel` public entrypoint** (1.3.0): `import { installModel } from '@cap-js/ai/models.js'` — programmatic model provisioning without CAP plugin hooks on import | `test/ai-api.test.mts` |
-| `cds-ai` CLI still healthy after the 1.3.0 refactor (progress/stall-timeout rework) | `test/ai-api.test.mts` |
+| **Fail-fast env validation** (mcp-server 0.1.0): every `CDS_MCP_*` var checked by `lib/utils.js` — timeouts at import time, `CDS_MCP_MAX_RESULTS` per search call | `test/config-validation.test.mts` |
+| **Runtime-aware hybrid search** (mcp-server 0.1.0): `hybridSearch(..., { runtime })` drops chunks labelled with the other runtime before cosine + BM25 (FTS5) + weighted RRF | `test/runtime-filter.test.mts` |
+| **`installModel` public entrypoint** (ai 1.3.0): `import { installModel } from '@cap-js/ai/models.js'` — programmatic model provisioning without CAP plugin hooks | `test/ai-api.test.mts` |
+| **Live model-download progress + stall-based timeouts** (ai 1.3.0) — visible in the boot log on first `npm run serve` | manual |
 
 ## Run
 
 ```bash
 npm install
-npm test          # 8 tests; the runtime-filter test downloads BAAI/bge-small-en-v1.5 (~30 MB) on first use
+npm test          # 9 tests; runtime-filter test downloads BAAI/bge-small-en-v1.5 (~30 MB) on first use
 ```
 
 ## Pitfalls found while building this
@@ -30,3 +44,6 @@ npm test          # 8 tests; the runtime-filter test downloads BAAI/bge-small-en
 
 - `@cap-js/mcp-server` 0.1.0 (depends on `@cap-js/ai` `^1.3.0`, `onnxruntime-node` `^1.30.0`)
 - `@cap-js/ai` 1.3.0 (no runtime deps; peer `@sap/cds >= 9`)
+- **Agent services are A2A-only by default**: `/agents/notes/Notes` returns 404 — entity access happens through generated agent tools, not REST. Add `@(odata: true)` to the service if you also want OData.
+- **No `cds` CLI without @sap/cds-dk** — @sap/cds ships only the `cds-serve` bin; use `npm run serve`.
+- The @cap-js/ai plugin boots with the server and blocks startup until its embedding model is downloaded/validated (~87 MB on first boot — that's the 1.3.0 progress log in action).

@@ -1,0 +1,12 @@
+# CAP config (new in @sap/cds 10.2: cap.yaml, opt-in via cds.features.cap_yaml in .cdsrc.json)
+
+requires:
+  db:
+    kind: sqlite
+    credentials:
+      url: ':memory:'
+
+  # NEW in @cap-js/agents 0.9.9: built-in mock LLM for local demos/tests —
+  # no API key. It even auto-calls the `query` tool when one is bound.
+  llm:
+    kind: llm-mock
