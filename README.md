@@ -2,9 +2,9 @@
 
 Demo project for the CAP AI stack releases of late Oct 2026: **@cap-js/ai 1.3.0**, **@cap-js/mcp-server 0.1.0** and **@cap-js/agents 0.9.9**. TypeScript only, zero build step — Node 24 type stripping loads `.mts` natively.
 
-## The BTP-style web client (App Router)
+## The BTP-style web client (App Router + classic UI5)
 
-`app/router` + `app/router/resources/index.html` — the production pattern from the official bookshop sample: a static web client served by **@sap/approuter**, talking to the CAP backend **only** through the `srv-api` destination with CSRF protection.
+`app/router` + `app/router/resources/index.html` — the production pattern from the official bookshop sample: a **classic SAP UI5** (sap.m, `sap_horizon` theme) client served by **@sap/approuter**, talking to the CAP backend **only** through the `srv-api` destination with CSRF protection. UI5 loads from the CDN bootstrap — still zero build step.
 
 ```bash
 npm run serve &                      # CAP on :4004

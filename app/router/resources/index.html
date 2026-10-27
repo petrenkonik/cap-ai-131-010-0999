@@ -3,79 +3,98 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Notes Agent — A2A client</title>
+<title>Notes Agent — UI5 A2A client</title>
+
+<!-- Classic SAP UI5 bootstrap from CDN: zero build, zero bundlers -->
+<script id="sap-ui-bootstrap"
+        src="https://ui5.sap.com/resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon"
+        data-sap-ui-libs="sap.m"
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-async="true"
+        data-sap-ui-xx-waitForTheme="true"></script>
+
 <style>
-  :root { color-scheme: dark; }
-  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e6e6e6; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-  header { padding: 12px 16px; border-bottom: 1px solid #26293a; font-weight: 600; }
-  header small { display: block; color: #8b8fa3; font-weight: 400; }
-  #chat { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .msg { max-width: 75%; padding: 10px 12px; border-radius: 12px; white-space: pre-wrap; }
-  .user { align-self: flex-end; background: #2b4a8f; }
-  .agent { align-self: flex-start; background: #23263a; }
-  form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #26293a; }
-  input { flex: 1; background: #1a1d2b; border: 1px solid #33374d; color: inherit; border-radius: 8px; padding: 10px; }
-  button { background: #2b4a8f; color: white; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; }
-  button:disabled { opacity: .5; }
+  .chatMsgUser   { align-self: flex-end; background: #dbe7ff; border-radius: 12px; padding: 8px 12px; max-width: 75%; }
+  .chatMsgAgent  { align-self: flex-start; background: #eff1f5; border-radius: 12px; padding: 8px 12px; max-width: 75%; }
+  .chatVBox      { padding: 12px; }
 </style>
 </head>
-<body>
-<header>Notes Agent <small>A2A 0.3.0 · JSON-RPC · via App Router → srv-api</small></header>
-<div id="chat"></div>
-<form id="f">
-  <input id="t" placeholder="Ask the agent…" autocomplete="off">
-  <button id="b">Send</button>
-</form>
-<script>
-  // BTP-style client: talks to the CAP backend ONLY through the App Router
-  // (destination srv-api). On BTP the same route is protected by XSUAA.
-  const ENDPOINT = '/agent/agents/notes'
-  const chat = document.getElementById('chat'), t = document.getElementById('t'), b = document.getElementById('b')
-  const contextId = crypto.randomUUID()
+<body class="sapUiBody" id="content"></body>
 
-  // BTP-style CSRF dance: fetch a token once, send it on every mutating call
-  let csrfToken = ''
-  async function fetchCsrf() {
-    const r = await fetch(ENDPOINT, { headers: { 'X-CSRF-Token': 'fetch' } })
-    csrfToken = r.headers.get('x-csrf-token') ?? ''
-  }
+<script>
+/* BTP-style UI5 client: talks to CAP ONLY through the App Router
+   (destination srv-api). On BTP the same route is XSUAA-protected. */
+const ENDPOINT = '/agent/agents/notes'
+const contextId = crypto.randomUUID()
+
+// BTP CSRF dance: fetch a token once, send it on every mutating call
+let csrfToken = ''
+async function fetchCsrf() {
+  const r = await fetch(ENDPOINT, { headers: { 'X-CSRF-Token': 'fetch' } })
+  csrfToken = r.headers.get('x-csrf-token') ?? ''
+}
+
+async function sendToAgent(text) {
+  await fetchCsrf()
+  const r = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify({
+      jsonrpc: '2.0', id: Date.now(), method: 'message/send',
+      params: { message: { role: 'user', kind: 'message', messageId: crypto.randomUUID(), contextId, parts: [{ kind: 'text', text }] } }
+    })
+  })
+  const body = await r.json()
+  const parts = body?.result?.status?.message?.parts ?? []
+  return parts.map(p => p.text).join('\n') || JSON.stringify(body?.error ?? body)
+}
+
+sap.ui.getCore().attachInit(() => {
+  const sapm = sap.m
+  const chatBox = new sapm.VBox({ class: 'chatVBox', alignItems: 'Stretch' })
 
   function add(role, text) {
-    const div = document.createElement('div')
-    div.className = 'msg ' + role
-    div.textContent = text
-    chat.appendChild(div)
-    chat.scrollTop = chat.scrollHeight
+    chatBox.addItem(new sapm.HBox({
+      justifyContent: role === 'user' ? 'End' : 'Start',
+      items: [new sapm.Text({ text, wrapping: true }).addStyleClass(role === 'user' ? 'chatMsgUser' : 'chatMsgAgent')]
+    }))
   }
 
-  document.getElementById('f').onsubmit = async e => {
-    e.preventDefault()
-    const text = t.value.trim()
+  const input = new sapm.Input({ placeholder: 'Ask the agent…', width: '100%' })
+  const sendBtn = new sapm.Button({ icon: 'sap-icon://send', type: 'Emphasized', press: send })
+
+  async function send() {
+    const text = (input.getValue() || '').trim()
     if (!text) return
     add('user', text)
-    t.value = ''
-    b.disabled = true
+    input.setValue('')
+    oPage.setBusy(true)
     try {
-      await fetchCsrf()
-      const r = await fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({
-          jsonrpc: '2.0', id: Date.now(), method: 'message/send',
-          params: { message: { role: 'user', kind: 'message', messageId: crypto.randomUUID(), contextId, parts: [{ kind: 'text', text }] } }
-        })
-      })
-      const body = await r.json()
-      const parts = body?.result?.status?.message?.parts ?? []
-      const out = parts.map(p => p.text).join('\n') || JSON.stringify(body?.error ?? body)
-      add('agent', out)
+      add('agent', await sendToAgent(text))
     } catch (err) {
       add('agent', '⚠️ ' + err.message)
     } finally {
-      b.disabled = false
+      oPage.setBusy(false)
     }
   }
+  input.attachSubmit(send)
+
+  const footer = new sapm.Bar({
+    contentMiddle: [input],
+    contentRight: [sendBtn]
+  })
+
+  var oPage = new sapm.Page({
+    title: 'Notes Agent — UI5 · A2A 0.3.0 · via App Router',
+    showHeader: true,
+    content: [new sapm.ScrollContainer({ height: '100%', vertical: true, content: [chatBox] })],
+    footer
+  })
+
   add('agent', 'Ask me about your notes. (llm-mock answers — no API key involved.)')
+
+  new sapm.App({ initialPage: oPage.getId(), pages: [oPage] }).placeAt('content')
+})
 </script>
-</body>
 </html>
