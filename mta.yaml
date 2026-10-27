@@ -1,0 +1,54 @@
+# BTP deployment shape (pattern from cap-js/agents bookshop sample).
+# Not deployed in this demo — shows how the modules wire up on CF/Kyma:
+# approuter (web client) → srv-api destination → CAP server; XSUAA for auth,
+# HANA for persistence, AI Core for real models (llm-mock is local-only).
+_schema-version: 3.3.0
+ID: cap-ai-mcp-whats-new
+version: 1.0.0
+
+modules:
+  - name: demo-srv
+    type: nodejs
+    path: .
+    build-parameters: { builder: npm-ci }
+    provides:
+      - name: srv-api
+        properties: { srv-url: '${default-url}' }
+    requires:
+      - name: demo-auth
+      - name: demo-db
+      - name: demo-ai
+
+  - name: demo-db-deployer
+    type: hdb
+    path: gen/db
+    build-parameters: { builder: npm-ci }
+    requires:
+      - name: demo-db
+
+  - name: demo-approuter
+    type: approuter.nodejs
+    path: app/router
+    parameters:
+      disk-quota: 256M
+      memory: 256M
+    requires:
+      - name: demo-auth
+
+resources:
+  - name: demo-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+  - name: demo-db
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+  - name: demo-ai
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: aicore
+      service-plan: extended

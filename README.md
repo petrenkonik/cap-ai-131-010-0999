@@ -2,6 +2,20 @@
 
 Demo project for the CAP AI stack releases of late Oct 2026: **@cap-js/ai 1.3.0**, **@cap-js/mcp-server 0.1.0** and **@cap-js/agents 0.9.9**. TypeScript only, zero build step — Node 24 type stripping loads `.mts` natively.
 
+## The BTP-style web client (App Router)
+
+`app/router` + `app/router/resources/index.html` — the production pattern from the official bookshop sample: a static web client served by **@sap/approuter**, talking to the CAP backend **only** through the `srv-api` destination with CSRF protection.
+
+```bash
+npm run serve &                      # CAP on :4004
+cd app/router && npm i && npm start  # approuter on :5100 (local: default-env.json → :4004)
+open http://localhost:5100/          # the chat client, proxied to the agent
+```
+
+- `xs-app.json`: `/agent/*` → destination `srv-api` (csrfProtection), everything else → static `resources/`
+- The page does the BTP CSRF dance: `GET X-CSRF-Token: fetch`, then sends the token on every `message/send`
+- On BTP add `authenticationType: OAuth2` + XSUAA binding (mta.yaml included, resources: xsuaa / hana / aicore)
+
 ## The agents part (A2A + web chat, no API key)
 
 `@cap-js/agents` is a CAP plugin: annotate a service with `@agent` and it becomes an A2A-protocol agent with an auto-generated card, auto-generated tools and a bundled chat web UI.
