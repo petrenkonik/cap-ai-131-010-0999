@@ -1,6 +1,14 @@
 # cap-ai-mcp-whats-new
 
-Demo project for the CAP AI stack releases of late Oct 2026: **@cap-js/ai 1.3.0**, **@cap-js/mcp-server 0.1.0** and **@cap-js/agents 0.9.9**. TypeScript only, zero build step — Node 24 type stripping loads `.mts` natively.
+> **Last updated: 2026-10-28** · covers the CAP AI stack releases of late Oct 2026
+
+| Package | Version | Published on npm |
+|---|---|---|
+| [@cap-js/ai](https://www.npmjs.com/package/@cap-js/ai) | **1.3.0** | 2026-10-26 |
+| [@cap-js/mcp-server](https://www.npmjs.com/package/@cap-js/mcp-server) | **0.1.0** | 2026-10-26 |
+| [@cap-js/agents](https://www.npmjs.com/package/@cap-js/agents) | **0.9.9** | 2026-10-23 |
+
+TypeScript only, zero build step — Node 24 type stripping loads `.mts` natively.
 
 ## The BTP-style web client (App Router + classic UI5)
 
