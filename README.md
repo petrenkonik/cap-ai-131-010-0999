@@ -1,4 +1,4 @@
-# cap-ai-mcp-whats-new
+# cap-ai-131-010-0999
 
 > **Last updated: 2026-10-28** · covers the CAP AI stack releases of late Oct 2026
 
