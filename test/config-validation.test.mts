@@ -47,6 +47,7 @@ test('importing the search module with CDS_MCP_MANIFEST_TIMEOUT=abc fails fast',
     ['--input-type=module', '-e', "import('@cap-js/mcp-server/lib/searchMarkdownDocs.js')"],
     { cwd: mcpRoot, env: { ...process.env, CDS_MCP_MANIFEST_TIMEOUT: 'abc' }, encoding: 'utf8' }
   )
+  assert.ifError(r.error)
   assert.notEqual(r.status, 0, 'process must exit non-zero on invalid env')
   assert.match(r.stderr, /positive integer/)
 })
@@ -57,5 +58,6 @@ test('same import with a valid env loads cleanly (exit 0)', () => {
     ['--input-type=module', '-e', "import('@cap-js/mcp-server/lib/searchMarkdownDocs.js')"],
     { cwd: mcpRoot, env: { ...process.env, CDS_MCP_MAX_RESULTS: '5' }, encoding: 'utf8' }
   )
+  assert.ifError(r.error)
   assert.equal(r.status, 0, r.stderr)
 })

@@ -1,0 +1,29 @@
+{
+  "name": "notes-agent-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ui5/webcomponents": "~2.28.1",
+    "@ui5/webcomponents-base": "~2.28.1",
+    "@ui5/webcomponents-fiori": "~2.28.1",
+    "@ui5/webcomponents-icons": "~2.28.0",
+    "@ui5/webcomponents-react": "^2.28.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

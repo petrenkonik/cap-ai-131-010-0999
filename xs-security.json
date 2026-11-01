@@ -1,5 +1,8 @@
 {
-  "xsappname": "cap-ai-mcp-whats-new",
+  "xsappname": "cap-ai-131-010-0999",
   "tenant-mode": "dedicated",
-  "description": "CAP AI/MCP/Agents demo security descriptor"
+  "description": "CAP A2A agent demo security descriptor",
+  "scopes": [],
+  "attributes": [],
+  "role-templates": []
 }

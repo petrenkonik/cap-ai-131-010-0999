@@ -1,18 +1,19 @@
 {
   "welcomeFile": "index.html",
+  "authenticationMethod": "route",
   "routes": [
     {
       "source": "^/agent/(.*)$",
       "target": "$1",
       "destination": "srv-api",
       "csrfProtection": true,
-      "authenticationType": "none"
+      "authenticationType": "xsuaa"
     },
     {
       "source": "^/(.*)$",
       "target": "$1",
       "localDir": "resources",
-      "authenticationType": "none"
+      "authenticationType": "xsuaa"
     }
   ]
 }

@@ -3,10 +3,41 @@
 requires:
   db:
     kind: sqlite
+    # in-memory: data is lost on every restart — fine for a demo
     credentials:
       url: ':memory:'
 
+  # No auth locally; the production profile switches to XSUAA (see below).
+  auth:
+    kind: dummy
+
   # NEW in @cap-js/agents 0.9.9: built-in mock LLM for local demos/tests —
   # no API key. It even auto-calls the `query` tool when one is bound.
+  # Development only: in production the plugin's own default (`aicore`) applies.
   llm:
     kind: llm-mock
+
+  # Local run against a real model: `cds-serve --profile glm`.
+  # GLM exposes an OpenAI-compatible API; the key comes from OPENAI_API_KEY (.env, git-ignored).
+  '[glm]':
+    llm:
+      kind: openai
+      model: glm-5.3-flash
+      credentials:
+        baseURL: https://api.z.ai/api/coding/paas/v4
+
+  '[production]':
+    auth:
+      kind: xsuaa
+    db:
+      kind: hana
+    # drop the mock → fall back to the plugin's production default (aicore)
+    llm:
+      kind: aicore
+
+# `log` is a top-level key (not under `requires`): verbose agent/MCP logs for the glm profile
+'[glm]':
+  log:
+    levels:
+      agents: debug
+      mcp: debug

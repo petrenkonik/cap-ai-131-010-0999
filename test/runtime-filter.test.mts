@@ -13,13 +13,18 @@ import assert from 'node:assert/strict'
  */
 
 const chunks = [
-  { content: 'node: serve OData with cds serve', embeddings: rand(384), meta: { label: 'nodejs' } },
-  { content: 'java: run the CAP Java runtime', embeddings: rand(384), meta: { label: 'java' } },
-  { content: 'unlabelled: CAP is a framework', embeddings: rand(384), meta: {} },
+  { content: 'node: serve OData with cds serve', embeddings: vec(1), meta: { label: 'nodejs' } },
+  { content: 'java: run the CAP Java runtime', embeddings: vec(2), meta: { label: 'java' } },
+  { content: 'unlabelled: CAP is a framework', embeddings: vec(3), meta: {} },
 ]
 
-function rand(dim: number): number[] {
-  return Array.from({ length: dim }, () => Math.random() * 2 - 1)
+// deterministic pseudo-random vector (LCG) so the ranking is reproducible
+function vec(seed: number, dim = 384): number[] {
+  let x = seed
+  return Array.from({ length: dim }, () => {
+    x = (x * 1664525 + 1013904223) % 4294967296
+    return (x / 4294967296) * 2 - 1
+  })
 }
 
 test('runtime-aware filtering drops the other runtime, keeps unlabelled', async t => {

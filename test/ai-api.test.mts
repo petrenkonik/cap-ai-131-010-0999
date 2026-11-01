@@ -26,11 +26,12 @@ test('existing cds-ai CLI still works (--help exits 0)', () => {
   assert.match(r.stdout, /install-model|model/i)
 })
 
-test('embedding config knobs are readable (embedding.root / embedding.offline)', async () => {
-  // 1.3.0 added per-service embedding.root (model lookup without changing the
-  // project root) and embedding.offline (read-only, local-then-home lookup).
+test('installModel() validates its configuration instead of crashing', async () => {
+  // Called without a config it must reject with a *validation* error (not a
+  // network/IO failure) — proves the entrypoint is wired and checks its input.
   const { installModel } = await import('@cap-js/ai/models.js')
-  // calling with no args must fail with a *configuration* error, not a crash —
-  // proves the function entrypoint is wired and validates input.
-  await assert.rejects(() => (installModel as (r?: unknown) => Promise<unknown>)(), Error)
+  await assert.rejects(
+    () => (installModel as (r?: unknown) => Promise<unknown>)(),
+    /embedding\.repository must be a safe Hugging Face repository ID/
+  )
 })

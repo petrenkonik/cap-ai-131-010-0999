@@ -1,12 +1,22 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
+import net from 'node:net'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-const PORT = 4097
-const base = `http://localhost:${PORT}/agents/notes`
+
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer()
+    srv.once('error', reject)
+    srv.listen(0, () => {
+      const { port } = srv.address() as net.AddressInfo
+      srv.close(() => resolve(port))
+    })
+  })
+}
 
 function waitFor<T>(fn: () => Promise<T>, timeoutMs: number, everyMs = 1000): Promise<T> {
   const t0 = Date.now()
@@ -26,19 +36,32 @@ function waitFor<T>(fn: () => Promise<T>, timeoutMs: number, everyMs = 1000): Pr
 let child: ReturnType<typeof spawn> | undefined
 
 test('agents plugin: A2A card, web chat preview and a full mock-LLM roundtrip', { timeout: 90_000 }, async t => {
-  child = spawn(process.execPath, ['node_modules/.bin/cds-serve'], {
+  const PORT = await freePort()
+  const base = `http://localhost:${PORT}/agents/notes`
+  // run the cds-serve entry via node directly (node_modules/.bin/* are .cmd shims on Windows)
+  child = spawn(process.execPath, [path.join(root, 'node_modules/@sap/cds/bin/serve.js')], {
     cwd: root,
     env: { ...process.env, PORT: String(PORT) },
-    stdio: 'ignore',
+    stdio: ['ignore', 'ignore', 'pipe'],
   })
+  let stderr = ''
+  child.stderr?.on('data', d => (stderr += d))
+  let exited: number | null | undefined
+  child.on('exit', code => (exited = code ?? -1))
   t.after(() => child?.kill())
 
   // 1. A2A agent card (NEW in @cap-js/agents 0.9.9: compiled from @agent CDS annotations)
   const card = await waitFor(async () => {
+    if (exited !== undefined) throw new Error(`server exited (${exited}):
+${stderr}`)
     const r = await fetch(`${base}/.well-known/agent-card.json`)
     if (!r.ok) throw new Error(`card not ready: ${r.status}`)
     return r.json() as Promise<Record<string, unknown>>
-  }, 60_000)
+  }, 60_000).catch(err => {
+    throw new Error(`${(err as Error).message}
+--- server stderr ---
+${stderr}`)
+  })
   assert.equal(card.protocolVersion, '0.3.0')
   assert.match(String(card.name), /NotesAgent/)
 
@@ -69,9 +92,13 @@ test('agents plugin: A2A card, web chat preview and a full mock-LLM roundtrip', 
     }),
   })
   assert.equal(rpc.status, 200)
-  const body = (await rpc.json()) as { result?: { status?: { state?: string }; kind?: string } }
+  const body = (await rpc.json()) as {
+    result?: { status?: { state?: string; message?: { parts?: Array<{ text?: string }> } }; kind?: string }
+  }
   assert.equal(body.result?.kind, 'task')
   assert.equal(body.result?.status?.state, 'completed')
+  const reply = (body.result?.status?.message?.parts ?? []).map(p => p.text ?? '').join('')
+  assert.ok(reply.trim().length > 0, 'agent must answer with non-empty text')
 
   child?.kill()
 })

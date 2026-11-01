@@ -1,4 +1,25 @@
 node_modules/
+target/
+_out/
+gen/
+.cds/
+
+.cdsrc-private.json
+default-*.json
+*.sqlite
 *.log
+.env
+
+# MTA
+mta_archives/
+*_mta_build_tmp
+*.mtar
+
+# Other
 .DS_Store
-app/router/node_modules/
+
+# @cap-js/cds-typer
+@cds-models
+
+# built React client (source: app/web, output: app/router/resources)
+app/router/resources/
