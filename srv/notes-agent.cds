@@ -2,6 +2,7 @@ using { demo } from '../db/schema';
 
 /** A2A agent over the demo Notes model — tools are generated from this service. */
 @agent: true
+@agent.directory: 'agents/notes'
 @description: 'Demo agent managing notes. Runs on the built-in llm-mock provider locally (AI Core in production).'
 @requires: 'authenticated-user'
 service NotesAgent @(path: '/agents/notes') {

@@ -1,17 +1,31 @@
 # cap-ai-131-010-0999
 
-> **Last updated: 2026-11-01** · covers the CAP AI stack releases of late Oct 2026
+> **Last updated: 2026-11-14** · covers the CAP AI stack releases of late Oct 2026 + the Nov 4–12 wave
 
 | Package | Version | Published on npm |
 |---|---|---|
 | [@cap-js/ai](https://www.npmjs.com/package/@cap-js/ai) | **1.3.0** | 2026-10-26 |
 | [@cap-js/mcp-server](https://www.npmjs.com/package/@cap-js/mcp-server) | **0.1.0** | 2026-10-26 |
-| [@cap-js/agents](https://www.npmjs.com/package/@cap-js/agents) | **0.9.10** | 2026-10-26 |
+| [@cap-js/agents](https://www.npmjs.com/package/@cap-js/agents) | **0.9.11** | 2026-11-06 |
+| [@cap-js/db-service](https://www.npmjs.com/package/@cap-js/db-service) | **3.2.0** | 2026-11-11 |
+| [@cap-js/hana](https://www.npmjs.com/package/@cap-js/hana) | **3.2.0** | 2026-11-11 |
 | [@cap-js/audit-logging](https://www.npmjs.com/package/@cap-js/audit-logging) | **1.3.0** | 2026-09-10 |
 | [@sap/cds](https://www.npmjs.com/package/@sap/cds) | **10.2.2** | 2026-10-28 |
 | [@sap/approuter](https://www.npmjs.com/package/@sap/approuter) | **23.4.0** | 2026-10-29 |
 
 TypeScript only — the server tests are `.mts` and run with no build step (Node 24 type stripping, requires Node >= 24, see `engines`); the React client in `app/web` is `.ts`/`.tsx`, type-checked with `tsc` and built with Vite.
+
+## What's new — the Nov 4–12 wave (`test/whats-new-nov.test.mts`)
+
+Three demos, one test file, all green in the suite:
+
+1. **`@cap-js/agents 0.9.11` — AGENTS.md autodiscovery (breaking).** `@agent.card` is gone; the A2A card is now compiled from `srv/agents/notes/AGENTS.md` (YAML frontmatter: `name`/`description`/`version`) plus `skills/*/SKILL.md` manifests (tags + examples), discovered via the new `@agent.directory` annotation. See `srv/agents/notes/`.
+
+2. **`@cap-js/db-service 3.2.0` — LEFT OUTER JOIN in expand/EXISTS.** Filters like `exists books[editor.name = 'E1' or title = 'bar']` keep rows whose nullable assoc path (editor) is NULL, so the OR branch on a local field still matches. Pre-3.2.0 the inner join dropped them. Negative control proves the left join doesn't fabricate matches on pure path predicates.
+
+3. **`@cap-js/hana 3.2.0` — vector embedding shorthand in CQL.** `cosine_similarity(embedding, 'query text')` auto-wraps the string into `vector_embedding(?,'QUERY',model)` — model resolved per element from `@cds.embeddings.model` (fallback: `cds.env.requires.embeddings.model`, default `SAP_GXY.20250407`). The test renders HANA SQL standalone, no server needed.
+
+> ⚠️ Migration note: the classic backlink syntax `on Books.genre = $self` no longer resolves under the CQL parser shipped with `@sap/cds` 10.2.x — write `on books.genre = $self` (the association element's own name), see `db/schema.cds`.
 
 ## The BTP-style web client (App Router + React)
 
